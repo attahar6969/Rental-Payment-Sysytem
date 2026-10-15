@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#eef0f4}
+  .bar{position:sticky;top:0;background:#1f2a44;padding:10px 16px;display:flex;gap:10px;align-items:center}
+  .bar button{font:inherit;font-size:13px;padding:7px 14px;border-radius:4px;border:1px solid #fff;background:transparent;color:#fff;cursor:pointer}
+  .bar button.p{background:#fff;color:#1f2a44}
+  .bar span{color:#cfd6e6;font-size:12px;margin-left:auto}
+  .sheet{background:#fff;margin:16px auto;max-width:720px}
+  @media print{.bar{display:none}body{background:#fff}.sheet{margin:0}}
+</style>
+</head>
+<body>
+<div class="bar">
+  <button class="p" onclick="window.print()">Print receipt</button>
+  <button id="pdf" onclick="pdf()">Export PDF</button>
+  <button onclick="google.script.host.close()">Close</button>
+  <span id="st"></span>
+</div>
+<div class="sheet"><?!= body ?></div>
+<script>
+function pdf(){
+  var b=document.getElementById('pdf'); b.disabled=true; b.textContent='Preparing…';
+  google.script.run.withSuccessHandler(function(f){
+    var a=document.createElement('a'); a.href='data:application/pdf;base64,'+f.base64; a.download=f.name; document.body.appendChild(a); a.click(); a.remove();
+    b.disabled=false; b.textContent='Export PDF'; document.getElementById('st').textContent = f.url ? 'Also saved to Google Drive' : '';
+  }).withFailureHandler(function(e){ alert(e.message); b.disabled=false; b.textContent='Export PDF'; }).exportReceiptPDF(<?!= JSON.stringify(receiptId) ?>);
+}
+</script>
+</body>
+</html>
