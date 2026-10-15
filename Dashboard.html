@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+<style>
+  :root{--ink:#1f2a44;--rule:#d9dde5;--wash:#f3f5f9;--green:#1b7f4b;--red:#c0392b;--orange:#d9822b;--blue:#2563a8;--muted:#5d6678}
+  *{box-sizing:border-box}
+  body{margin:0;font:13px/1.4 'IBM Plex Sans',Arial,sans-serif;color:var(--ink);background:#fff}
+  .bar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;padding:12px 18px;background:var(--wash);border-bottom:1px solid var(--rule)}
+  .bar label{display:block;font-size:11px;color:var(--muted)}
+  .bar input,.bar select{padding:6px 8px;font:inherit;border:1px solid #b9c0cf;border-radius:4px;background:#fff;min-width:118px}
+  button{font:inherit;padding:7px 14px;border:1px solid var(--ink);background:#fff;color:var(--ink);border-radius:4px;cursor:pointer}
+  button.p{background:var(--ink);color:#fff}
+  .grow{flex:1}
+  main{padding:14px 18px 30px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .k{border:1px solid var(--rule);border-left:5px solid var(--ink);padding:9px 12px;border-radius:3px}
+  .k b{display:block;font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+  .k span{font-size:11px;color:var(--muted)}
+  .k.g{border-left-color:var(--green)}.k.g b{color:var(--green)}
+  .k.r{border-left-color:var(--red)}.k.r b{color:var(--red)}
+  .k.o{border-left-color:var(--orange)}.k.o b{color:var(--orange)}
+  .k.b{border-left-color:var(--blue)}.k.b b{color:var(--blue)}
+  .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:12px;margin:14px 0}
+  .ch{border:1px solid var(--rule);border-radius:3px;height:250px}
+  h3{margin:18px 0 6px;font-size:14px}
+  .scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:900px}
+  th,td{padding:6px 8px;border-bottom:1px solid var(--rule);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  th{background:var(--ink);color:#fff;font-weight:500;font-size:12px}
+  th:first-child,td:first-child,th.l,td.l{text-align:left}
+  .pill{padding:2px 9px;border-radius:10px;color:#fff;font-size:11px;font-weight:600}
+  .PAID{background:var(--green)}.PARTIAL{background:var(--orange)}.UNPAID{background:var(--red)}.ADVANCE{background:var(--blue)}
+  .rc{color:var(--green)}.oc{color:var(--red)}.ac{color:var(--blue)}
+  #msg{padding:20px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div><label>From date</label><input type="date" id="fFrom"></div>
+  <div><label>To date</label><input type="date" id="fTo"></div>
+  <div><label>Rent month</label><input type="month" id="fMonth"></div>
+  <div><label>Tenant</label><select id="fTenant"><option value="">All tenants</option></select></div>
+  <div><label>Payment status</label><select id="fStatus"><option value="">All</option><option>PAID</option><option>PARTIAL</option><option>UNPAID</option><option>ADVANCE</option></select></div>
+  <div><label>Agreement</label><select id="fAgr"><option value="">All</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
+  <button class="p" id="apply">Apply filters</button>
+  <button id="clear">Clear</button>
+  <span class="grow"></span>
+  <button id="sheet">Open dashboard sheet</button>
+  <button class="p" id="refresh">Refresh system</button>
+</div>
+<div id="msg">Loading…</div>
+<main id="main" style="display:none">
+  <div class="kpis" id="kpis"></div>
+  <div class="charts">
+    <div class="ch" id="c1"></div><div class="ch" id="c2"></div><div class="ch" id="c3"></div><div class="ch" id="c4"></div><div class="ch" id="c5"></div>
+  </div>
+  <h3>Tenant summary</h3>
+  <div class="scroll"><table id="tt"></table></div>
+  <h3>Recent transactions</h3>
+  <div class="scroll"><table id="tx"></table></div>
+</main>
+<script>
+function $(i){return document.getElementById(i);}
+function inr(n){n=Number(n)||0;return '₹'+n.toLocaleString('en-IN',{minimumFractionDigits:(n%1?2:0),maximumFractionDigits:2});}
+function pretty(s){if(!s)return '–';var p=s.split('-');return p[2]+'-'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1]-1]+'-'+p[0];}
+var chartsReady=false, data=null, optionsFilled=false;
+google.charts.load('current',{packages:['corechart']}); google.charts.setOnLoadCallback(function(){chartsReady=true; if(data) drawCharts();});
+function filters(){return {from:$('fFrom').value,to:$('fTo').value,month:$('fMonth').value,tenantId:$('fTenant').value,status:$('fStatus').value,agreementStatus:$('fAgr').value};}
+function load(){
+  $('msg').style.display='block'; $('msg').textContent='Loading…';
+  google.script.run.withSuccessHandler(function(d){data=d;render();}).withFailureHandler(function(e){$('msg').textContent='Could not load: '+(e.message||e);}).getDashboardData(filters());
+}
+function kpi(cls,label,val){return '<div class="k '+cls+'"><span>'+label+'</span><b>'+val+'</b></div>';}
+function cellText(tr,t,cls){var td=document.createElement('td');td.textContent=t;if(cls)td.className=cls;tr.appendChild(td);return td;}
+function pill(td,s){var sp=document.createElement('span');sp.className='pill '+s;sp.textContent=s;td.textContent='';td.appendChild(sp);}
+function render(){
+  $('msg').style.display='none'; $('main').style.display='block';
+  var k=data.kpis;
+  $('kpis').innerHTML=kpi('','Active tenants',k.activeTenants)+kpi('','Total expected rent',inr(k.expected))+kpi('g','Total rent received',inr(k.received))+
+    kpi('r','Total outstanding',inr(k.outstanding))+kpi('b','Total advance credit',inr(k.advance))+kpi('g','Fully paid tenants',k.paid)+kpi('o','Partial payment tenants',k.partial)+kpi('r','Unpaid tenants',k.unpaid);
+  if(!optionsFilled){ data.tenantOptions.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.textContent=t.name;$('fTenant').appendChild(o);}); optionsFilled=true; }
+  var h=['Tenant name','Phone','Agreement rent','Current month rent','Previous outstanding','Total due','Total Past received','Remaining balance','Advance credit','Status','Last payment','Agreement end'];
+  var t=$('tt'); t.innerHTML=''; var hr=document.createElement('tr'); h.forEach(function(x){var th=document.createElement('th');th.textContent=x;hr.appendChild(th);}); t.appendChild(hr);
+  if(!data.tenants.length){t.insertRow().insertCell().textContent='No tenants match these filters.';}
+  data.tenants.forEach(function(r){var tr=t.insertRow();
+    cellText(tr,r.name,'l');cellText(tr,r.phone);cellText(tr,inr(r.agreementRent));cellText(tr,inr(r.currentMonthRent));cellText(tr,inr(r.previousOutstanding),r.previousOutstanding>0?'oc':'');
+    cellText(tr,inr(r.totalDue));cellText(tr,inr(r.totalReceived),'rc');cellText(tr,inr(r.remaining),r.remaining>0?'oc':'');cellText(tr,inr(r.advance),r.advance>0?'ac':'');
+    pill(cellText(tr,''),r.status);cellText(tr,pretty(r.lastPaymentDate));cellText(tr,pretty(r.agreementEnd));});
+  var x=$('tx'); x.innerHTML=''; var hx=document.createElement('tr'); ['Receipt ID','Payment date','Tenant','Amount received','Rent month allocation','Remaining outstanding','Status'].forEach(function(s){var th=document.createElement('th');th.textContent=s;hx.appendChild(th);}); x.appendChild(hx);
+  if(!data.transactions.length){x.insertRow().insertCell().textContent='No payments match these filters.';}
+  data.transactions.forEach(function(r){var tr=x.insertRow();
+    cellText(tr,r.receiptId,'l');cellText(tr,pretty(r.date));cellText(tr,r.tenant,'l');cellText(tr,inr(r.amount),'rc');cellText(tr,r.allocation,'l');cellText(tr,inr(r.remaining),r.remaining>0?'oc':'');pill(cellText(tr,''),r.status);});
+  if(chartsReady) drawCharts();
+}
+function drawCharts(){
+  var c=data.charts, G=google.visualization;
+  function chart(id,type,rows,head,colors,fmt){
+    var el=$(id); if(!rows.length){el.innerHTML='<div style="padding:20px;color:#5d6678">No data for '+head[0]+' yet.</div>';return;}
+    var dt=G.arrayToDataTable([head].concat(rows));
+    new G.NumberFormat({prefix:'₹',groupingSymbol:','}).format(dt,1);
+    new G[type](el).draw(dt,{title:fmt,legend:{position:'none'},colors:colors,chartArea:{width:'80%',height:'62%'},titleTextStyle:{color:'#1f2a44',fontSize:13}});
+  }
+  chart('c1','ColumnChart',c.monthlyCollection.map(function(x){return [x.month,x.amount];}),['Month','Collected'],['#1b7f4b'],'Monthly rent collection');
+  chart('c2','ColumnChart',c.monthlyOutstanding.map(function(x){return [x.month,x.amount];}),['Month','Outstanding'],['#c0392b'],'Monthly outstanding');
+  chart('c3','BarChart',c.tenantCollection.map(function(x){return [x.name,x.amount];}),['Tenant','Collected'],['#2563a8'],'Tenant-wise collection');
+  chart('c5','LineChart',c.trend.map(function(x){return [x.month,x.amount];}),['Month','Cumulative'],['#1f2a44'],'Collection trend');
+  var s=c.status, dt=G.arrayToDataTable([['Status','Tenants'],['Paid',s.Paid],['Partial',s.Partial],['Unpaid',s.Unpaid]]);
+  new G.PieChart($('c4')).draw(dt,{title:'Paid vs partial vs unpaid',colors:['#1b7f4b','#d9822b','#c0392b'],chartArea:{width:'90%',height:'75%'},titleTextStyle:{color:'#1f2a44',fontSize:13}});
+}
+$('apply').onclick=load;
+$('clear').onclick=function(){['fFrom','fTo','fMonth','fTenant','fStatus','fAgr'].forEach(function(i){$(i).value='';});load();};
+$('sheet').onclick=function(){google.script.run.openDashboardSheet();};
+$('refresh').onclick=function(){var b=$('refresh');b.disabled=true;b.textContent='Refreshing…';
+  google.script.run.withSuccessHandler(function(r){b.disabled=false;b.textContent='Refresh system';load();if(r.pending)alert(r.pending+' agreement change(s) await administrator review (menu > Review Rent Revisions).');})
+   .withFailureHandler(function(e){b.disabled=false;b.textContent='Refresh system';alert(e.message);}).refreshSystem();};
+load();
+</script>
+</body>
+</html>
