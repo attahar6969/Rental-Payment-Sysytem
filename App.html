@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html><head><base target="_top"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--ink:#1b2540;--paper:#f4f5f8;--card:#fff;--rule:#dfe3ec;--mu:#5d6678;--g:#1b7f4b;--r:#c0392b;--o:#d9822b;--b:#2563a8;--gold:#b88a2e}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0;font:14px/1.5 "Segoe UI",system-ui,Arial,sans-serif;color:var(--ink);background:var(--paper)}
+#side{position:fixed;inset:0 auto 0 0;width:214px;background:var(--ink);color:#fff;padding:18px 10px;overflow:auto}
+#side h1{font-size:15px;margin:0 8px 2px}#side small{display:block;margin:0 8px 18px;color:#aab4cc;font-size:12px}
+#side a{display:block;padding:9px 12px;margin-bottom:2px;border-radius:6px;color:#c6cee2;cursor:pointer}
+#side a:hover{background:rgba(255,255,255,.08);color:#fff}#side a.on{background:rgba(255,255,255,.14);color:#fff;box-shadow:inset 3px 0 0 var(--gold)}
+#main{margin-left:214px}#top{display:flex;align-items:center;gap:12px;padding:10px 26px;background:var(--card);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:5}
+#top h2{margin:0;font-size:18px;flex:1}#who{font-size:12px;color:var(--mu);text-align:right}
+#view{padding:22px 26px 60px;max-width:1280px}
+button{font:inherit;padding:8px 16px;border-radius:5px;border:1px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer}
+button.p{background:var(--ink);color:#fff}button.s{padding:4px 10px;font-size:12px}button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--b);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:16px 18px;margin-bottom:16px}
+.card h3{margin:0 0 10px;font-size:15px}
+.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.k{background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--ink);border-radius:6px;padding:10px 14px}
+.k span{font-size:12px;color:var(--mu)}.k b{display:block;font-size:21px;font-variant-numeric:tabular-nums}
+.k.g{border-left-color:var(--g)}.k.g b{color:var(--g)}.k.r{border-left-color:var(--r)}.k.r b{color:var(--r)}.k.b{border-left-color:var(--b)}.k.b b{color:var(--b)}.k.o{border-left-color:var(--o)}.k.o b{color:var(--o)}
+table{width:100%;border-collapse:collapse}th,td{padding:7px 10px;border-bottom:1px solid var(--rule);text-align:left;white-space:nowrap;font-variant-numeric:tabular-nums}
+th{font-size:12px;color:var(--mu);font-weight:600;background:#fafbfd;position:sticky;top:0}.sc{overflow:auto;max-height:68vh}
+td.n,th.n{text-align:right}.pl{padding:2px 9px;border-radius:10px;color:#fff;font-size:11px;font-weight:600}
+.PAID{background:var(--g)}.PARTIAL{background:var(--o)}.UNPAID{background:var(--r)}.ADVANCE{background:var(--b)}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+label{display:block;font-size:12px;color:var(--mu);margin-bottom:3px}
+input,select{width:100%;padding:8px 10px;font:inherit;border:1px solid #b9c0cf;border-radius:4px;background:#fff;color:var(--ink)}input[readonly]{background:var(--paper)}
+.bars{display:flex;align-items:flex-end;gap:14px;height:130px;padding-top:8px}.bars div{flex:1;text-align:center;font-size:12px;color:var(--mu)}
+.bars i{display:block;background:var(--g);border-radius:3px 3px 0 0;margin-bottom:4px}
+.msg{padding:9px 12px;border-radius:4px;margin:10px 0;font-size:13px}.err{background:#fbeae8;color:#8a2a20;border:1px solid #e6b3ad}.warn{background:#fdf1e2;color:#7a4a0c;border:1px solid #efcf9f}.ok{background:#e4f4ea;color:#14532d;border:1px solid #a9d8bc}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{flex:0 0 auto}.mu{color:var(--mu)}.g{color:var(--g)}.r{color:var(--r)}
+#modal{position:fixed;inset:0;background:rgba(27,37,64,.55);display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:24px;z-index:20}
+#mbox{background:#fff;border-radius:6px;max-width:740px;width:100%}.mbar{display:flex;gap:8px;padding:10px 14px;background:var(--ink);border-radius:6px 6px 0 0}
+#toast{position:fixed;right:18px;bottom:18px;background:var(--ink);color:#fff;padding:10px 16px;border-radius:5px;display:none;z-index:30;max-width:360px}
+@media(max-width:780px){
+#side{position:sticky;inset:0 0 auto 0;width:auto;z-index:8;padding:6px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+#side h1,#side small{display:none}
+#nav{display:flex;gap:4px}
+#side a{flex:0 0 auto;white-space:nowrap;margin:0;padding:11px 14px}
+#side a.on{box-shadow:inset 0 -3px 0 var(--gold)}
+#main{margin-left:0}
+#top{position:static;flex-wrap:wrap;gap:8px;padding:10px 12px}
+#top h2{font-size:17px;flex:1 1 auto;min-width:0}
+#rf{padding:8px 12px;font-size:13px;min-height:40px}
+#who{order:3;flex:1 1 100%;text-align:left}
+#view{padding:12px 12px 80px}
+.card{padding:12px;margin-bottom:12px}
+.kp{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.k{padding:8px 10px}.k b{font-size:17px}
+.fg{grid-template-columns:1fr}
+input:not([type=checkbox]),select{font-size:16px;min-height:44px}
+button{min-height:44px}button.s{min-height:36px;padding:6px 12px}
+#sv{flex:1 1 100%}
+th,td{padding:8px}
+.sc{max-height:62vh;-webkit-overflow-scrolling:touch}
+.sc th:first-child{position:sticky;left:0;z-index:3;background:#fafbfd}
+.sc td:first-child{position:sticky;left:0;z-index:1;background:#fff;box-shadow:1px 0 0 var(--rule)}
+.bars{overflow-x:auto;gap:10px}.bars div{min-width:64px}
+#modal{padding:8px}.mbar{flex-wrap:wrap}
+#toast{left:12px;right:12px;bottom:12px;max-width:none}
+}
+.dw{border-bottom:1px solid var(--rule)}.dw:last-child{border-bottom:0}
+.due{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 0}.due .dn{flex:1 1 150px;min-width:0}
+.due .da{text-align:right;min-width:92px;font-variant-numeric:tabular-nums}.due .da small{display:block;font-size:11px;color:var(--mu);font-weight:400}
+@media(max-width:780px){.due .dn{flex-basis:100%}.due .da{text-align:left}.due button{margin-left:auto}.dd .fg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.dc{border-top:4px solid var(--r);background:linear-gradient(180deg,#fff7f6 0,#fff 90px)}
+.dh{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.dt{display:flex;align-items:center;gap:12px}.dt h3{margin:0}.dt small{font-size:12px}
+.dbell{width:34px;height:34px;border-radius:50%;background:var(--r);color:#fff;display:grid;place-items:center;font-weight:800;animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(192,57,43,.45)}70%{box-shadow:0 0 0 10px rgba(192,57,43,0)}100%{box-shadow:0 0 0 0 rgba(192,57,43,0)}}
+.dchips{display:flex;gap:8px;flex-wrap:wrap}.chip{padding:4px 12px;border-radius:14px;background:var(--paper);border:1px solid var(--rule);font-size:12px;font-weight:600}
+.chip.red{background:var(--r);border-color:var(--r);color:#fff;font-size:13px}
+.dtools{display:flex;gap:10px;margin-bottom:10px}.dtools input{flex:1}.dtools select{width:auto;min-width:140px}
+.dw{border:1px solid var(--rule);border-left:4px solid var(--r);border-radius:8px;margin-bottom:10px;background:#fff;transition:box-shadow .2s,transform .2s}
+.dw:last-child{border-bottom:1px solid var(--rule)}
+.dw:hover{box-shadow:0 6px 18px rgba(27,37,64,.12);transform:translateY(-2px)}
+.dw.open{box-shadow:0 6px 18px rgba(27,37,64,.12)}
+.due{padding:12px 14px;cursor:pointer;border-radius:8px}
+.av{width:42px;height:42px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px;flex:0 0 auto}
+.due .dn b{font-size:15px}.sub{font-size:12px;color:var(--mu);margin:2px 0 6px}
+.pb{height:7px;background:var(--rule);border-radius:4px;overflow:hidden;max-width:260px}
+.pb i{display:block;height:100%;background:linear-gradient(90deg,var(--o),var(--g));border-radius:4px;transition:width .6s}
+.pbt{font-size:11px;color:var(--mu)}
+.due .da b{font-size:18px}
+.acts{display:flex;gap:6px;align-items:center}
+.acts a{display:inline-grid;place-items:center;padding:6px 11px;border-radius:5px;font-size:12px;font-weight:600;text-decoration:none;border:1px solid var(--rule);color:var(--ink);background:#fff}
+.acts a:hover{background:var(--paper)}.acts a.wa{background:#25d366;border-color:#25d366;color:#fff}.acts a.wa:hover{filter:brightness(.93)}
+.chev{display:inline-block;transition:transform .25s}.dw.open .chev{transform:rotate(180deg)}
+.dw .dd{display:none;padding:0 14px 8px}.dw.open .dd{display:block;animation:fd .25s}
+@keyframes fd{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.dok{display:flex;align-items:center;gap:14px;border-left:4px solid var(--g);background:#f1faf5}
+.dok-i{width:38px;height:38px;border-radius:50%;background:var(--g);color:#fff;display:grid;place-items:center;font-size:20px}
+@media(max-width:780px){.acts{flex:1 1 100%}.acts a{min-height:40px;flex:1}.dtools{flex-wrap:wrap}.dtools select{width:100%}.pb{max-width:none}}
+
+.cb{position:relative}
+.cb input{padding-right:42px}
+.cbx{position:absolute;right:1px;bottom:1px;width:40px;height:38px;min-height:0;padding:0;border:0;border-left:1px solid var(--rule);border-radius:0 4px 4px 0;background:var(--paper);font-size:16px;cursor:pointer}
+.cl{display:none;position:absolute;left:0;right:0;top:100%;margin-top:2px;max-height:240px;overflow:auto;background:#fff;border:1px solid #b9c0cf;border-radius:4px;box-shadow:0 8px 20px rgba(27,37,64,.18);z-index:15}
+.co{padding:11px 12px;cursor:pointer;border-bottom:1px solid var(--rule)}.co:last-child{border-bottom:0}
+.co:hover{background:var(--paper)}.co span{float:right;font-size:12px}
+@media(max-width:780px){.cbx{height:42px;width:44px}}
+
+.dtools .cb{flex:1;min-width:0}.dtools .cb input{width:100%}
+@media(max-width:780px){.dtools .cb{flex:1 1 100%}}
+
+.stm{padding:20px 22px}.stm h2{font-size:20px;margin:0}.stm h4{margin:18px 0 6px;font-size:13px}
+.stm .sh{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-bottom:10px;border-bottom:2px solid var(--ink);margin-bottom:12px}
+.stm .ov{overflow-x:auto}.stm table{font-size:12.5px}
+.stm tfoot td{font-weight:700;background:#fafbfd;border-top:2px solid var(--ink)}
+.stm .ft{margin-top:18px;font-size:11px;color:var(--mu);text-align:center}
+@media print{.stm{padding:0}.stm .ov{overflow:visible}.stm thead{display:table-header-group}.stm tr{page-break-inside:avoid}.k,.pl{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+@media print{body>*:not(#modal){display:none!important}#modal{position:static;background:none;padding:0;display:block!important}.mbar{display:none}}
+</style></head><body>
+<nav id="side" aria-label="Main"><h1>Rent Payment</h1><small id="biz"></small><div id="nav"></div></nav>
+<div id="main"><div id="top"><h2 id="title"></h2><button id="rf">Refresh system</button><div id="who"></div></div><div id="view">Loading…</div></div>
+<div id="modal"><div id="mbox"><div class="mbar"><button class="p" id="mp" style="border-color:#fff">Print</button><button id="md" style="background:transparent;color:#fff;border-color:#fff">Download PDF</button><button id="mc" style="background:transparent;color:#fff;border-color:#fff">Close</button></div><div id="mb"></div></div></div>
+<div id="toast" role="status"></div>
+<script>
+var $=function(i){return document.getElementById(i)},U={},cur='',E=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+function api(fn){var a=[].slice.call(arguments,1);return new Promise(function(ok,no){google.script.run.withSuccessHandler(ok).withFailureHandler(no)[fn](...a)})}
+function inr(n){n=Number(n)||0;return '₹'+n.toLocaleString('en-IN',{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2})}
+function toast(m){var t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(function(){t.style.display='none'},4500)}
+function fail(e){toast(e&&e.message?e.message:String(e))}
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function pill(s){return '<span class="pl '+E(s)+'">'+E(s)+'</span>'}
+var PAGES=[['dash','Dashboard'],['pay','New payment'],['rec','Receipts'],['log','Rent log'],['ledger','Rent ledger'],['stmt','Statement'],['history','Rent history'],['rev','Revisions',1],['set','Settings',1]];
+function nav(){$('nav').innerHTML=PAGES.filter(function(p){return !p[2]||U.admin}).map(function(p){return '<a tabindex="0" data-p="'+p[0]+'" class="'+(p[0]===cur?'on':'')+'">'+p[1]+'</a>'}).join('');
+ [].forEach.call($('nav').children,function(a){a.onclick=function(){go(a.dataset.p)};a.onkeydown=function(e){if(e.key==='Enter')go(a.dataset.p)}});var on=$('nav').querySelector('.on');if(on&&on.scrollIntoView)on.scrollIntoView({inline:'center',block:'nearest'})}
+function go(p){cur=p;nav();$('title').textContent=PAGES.filter(function(x){return x[0]===p})[0][1];$('view').innerHTML='<div class="mu">Loading…</div>';
+ ({dash:vDash,pay:vPay,rec:vRec,log:function(){vTable('log')},ledger:function(){vTable('ledger')},stmt:vStmt,history:function(){vTable('history')},rev:vRev,set:vSet})[p]().catch(function(e){$('view').innerHTML='<div class="msg err">'+E(e.message||e)+'</div>'})}
+$('rf').onclick=function(){var b=$('rf');b.disabled=true;b.textContent='Refreshing…';api('refreshSystem').then(function(r){toast('Refreshed. Ledger rows: '+r.ledgerRows+(r.pending?'. '+r.pending+' revision(s) need review.':''));go(cur)}).catch(fail).then(function(){b.disabled=false;b.textContent='Refresh system'})};
+
+function tbl(h,rows,nums){return '<div class="sc"><table><thead><tr>'+h.map(function(x,i){return '<th class="'+(nums&&nums.indexOf(i)>=0?'n':'')+'">'+E(x)+'</th>'}).join('')+'</tr></thead><tbody>'+(rows.length?rows.join(''):'<tr><td colspan="'+h.length+'" class="mu">Nothing to show yet.</td></tr>')+'</tbody></table></div>'}
+function vDash(){return api('getDashboardData',{}).then(function(d){var k=d.kpis,c=d.charts.monthlyCollection,mx=Math.max.apply(null,c.map(function(x){return x.amount}).concat([1]));
+ $('view').innerHTML='<div class="kp"><div class="k"><span>Active tenants</span><b>'+k.activeTenants+'</b></div><div class="k"><span>Expected rent</span><b>'+inr(k.expected)+'</b></div><div class="k g"><span>Rent received</span><b>'+inr(k.received)+'</b></div><div class="k r"><span>Outstanding</span><b>'+inr(k.outstanding)+'</b></div><div class="k b"><span>Advance credit</span><b>'+inr(k.advance)+'</b></div><div class="k g"><span>Fully paid</span><b>'+k.paid+'</b></div><div class="k o"><span>Partial</span><b>'+k.partial+'</b></div><div class="k r"><span>Unpaid</span><b>'+k.unpaid+'</b></div></div>'+
+ dueCard(d.tenants)+'<div class="card"><h3>Collected by month</h3><div class="bars">'+(c.length?c.map(function(x){return '<div><i style="height:'+Math.max(4,Math.round(x.amount/mx*100))+'px"></i>'+E(x.month)+'<br><b>'+inr(x.amount)+'</b></div>'}).join(''):'<span class="mu">No payments yet.</span>')+'</div></div>'+
+ '<div class="card"><h3>Tenants</h3>'+tbl(['Tenant','Phone','Rent','Previous due','Total due','Received','Balance','Advance','Status','Last payment','Agreement end'],d.tenants.map(function(t){return '<tr><td>'+E(t.name)+'</td><td>'+E(t.phone)+'</td><td class="n">'+inr(t.agreementRent)+'</td><td class="n">'+inr(t.previousOutstanding)+'</td><td class="n">'+inr(t.totalDue)+'</td><td class="n g">'+inr(t.totalReceived)+'</td><td class="n '+(t.remaining>0?'r':'')+'">'+inr(t.remaining)+'</td><td class="n">'+inr(t.advance)+'</td><td>'+pill(t.status)+'</td><td>'+E(t.lastPaymentDate)+'</td><td>'+E(t.agreementEnd)+'</td></tr>'}),[2,3,4,5,6,7])+'</div>'+
+ '<div class="card"><h3>Recent payments</h3>'+tbl(['Receipt','Date','Tenant','Amount','Settled','Remaining','Status'],d.transactions.slice(0,15).map(function(x){return '<tr><td>'+E(x.receiptId)+'</td><td>'+E(x.date)+'</td><td>'+E(x.tenant)+'</td><td class="n g">'+inr(x.amount)+'</td><td>'+E(x.allocation)+'</td><td class="n">'+inr(x.remaining)+'</td><td>'+pill(x.status)+'</td></tr>'}),[3,5])+'</div>';wireDue(d.tenants)})}
+
+/* Dashboard: tenants who still owe rent. Name, due amount, agreement rent; View details expands full information. */
+function dueRows(L,q,s){q=(q||'').toLowerCase();
+ var R=L.filter(function(t){return !q||String(t.name).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return s==='name'?String(a.name).localeCompare(String(b.name)):b.remaining-a.remaining});
+ if(!R.length)return '<div class="mu" style="padding:10px">No tenant matches.</div>';
+ return R.map(function(t){
+  var ini=String(t.name||'?').trim().split(/\s+/).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase();
+  var pct=t.totalDue>0?Math.max(0,Math.min(100,Math.round((t.totalReceived||0)/t.totalDue*100))):0;
+  var ph=String(t.phone||'').replace(/\D/g,''),wn=ph.length===10?'91'+ph:ph;
+  var msg=encodeURIComponent('Hello '+t.name+', this is a gentle reminder that rent of '+inr(t.remaining)+' is pending. Kindly pay at the earliest. Thank you.');
+  return '<div class="dw" data-tid="'+E(t.tid)+'"><div class="due" tabindex="0" role="button" aria-expanded="false">'+
+  '<div class="av">'+E(ini)+'</div>'+
+  '<div class="dn"><b>'+E(t.name)+'</b><div class="sub">'+(t.phone?E(t.phone)+' · ':'')+pill(t.status)+'</div><div class="pb"><i style="width:'+pct+'%"></i></div><span class="pbt">'+pct+'% of total due paid</span></div>'+
+  '<div class="da"><b class="r">'+inr(t.remaining)+'</b><small>Due</small></div>'+
+  '<div class="da"><b>'+inr(t.agreementRent)+'</b><small>Agreement</small></div>'+
+  '<div class="acts">'+(ph?'<a href="tel:+'+E(wn)+'">Call</a><a class="wa" target="_blank" rel="noopener" href="https://wa.me/'+E(wn)+'?text='+msg+'">WhatsApp</a>':'')+'<button class="s">Details <span class="chev">▾</span></button></div>'+
+  '</div><div class="dd"></div></div>'}).join('')}
+function dueCard(T){var L=T.filter(function(t){return t.remaining>0}),tot=L.reduce(function(s,t){return s+t.remaining},0);
+ if(!L.length)return '<div class="card dok"><div class="dok-i">✓</div><div><b>All clear</b><div class="mu">No pending dues. Every tenant is paid up.</div></div></div>';
+ return '<div class="card dc"><div class="dh"><div class="dt"><span class="dbell">!</span><div><h3>Dues pending</h3><small class="mu">Tap a tenant to see full details</small></div></div><div class="dchips"><span class="chip">'+L.length+' tenant'+(L.length>1?'s':'')+'</span><span class="chip red">'+inr(tot)+' to collect</span></div></div>'+
+ '<div class="dtools"><div class="cb"><input id="dq" autocomplete="off" placeholder="Search or select tenant"><button type="button" class="cbx" id="dx" aria-label="Show tenants">▾</button><div class="cl" id="dcl"></div></div><select id="ds"><option value="due">Highest due first</option><option value="name">Name A–Z</option></select></div><div id="dl">'+dueRows(L,'','due')+'</div></div>'}
+var LC=null;
+function ledgerAndLog(){return LC||(LC=Promise.all([api('webTable','ledger'),api('webTable','log')]))}
+function wireDue(T){LC=null;var dl=$('dl');if(!dl)return;var by={};T.forEach(function(t){by[t.tid]=t});
+ var L=T.filter(function(t){return t.remaining>0});
+ function draw(){dl.innerHTML=dueRows(L,$('dq').value,$('ds').value)}
+ function cl(q){q=(q||'').toLowerCase();var m=L.filter(function(t){return !q||String(t.name).toLowerCase().indexOf(q)>=0});
+  $('dcl').innerHTML=(q?'':'<div class="co" data-n=""><b>All tenants</b></div>')+(m.length?m.map(function(t){return '<div class="co" data-n="'+E(t.name)+'">'+E(t.name)+'<span class="r">'+inr(t.remaining)+'</span></div>'}).join(''):'<div class="co mu">No match</div>')}
+ function opn(v){$('dcl').style.display=v?'block':'none'}
+ $('dq').oninput=function(){draw();cl($('dq').value);opn(true)};
+ $('dq').onfocus=function(){cl($('dq').value);opn(true)};
+ $('dx').onclick=function(){if($('dcl').style.display==='block'){opn(false)}else{cl('');opn(true)}};
+ $('dcl').onclick=function(e){var o=e.target.closest('.co');if(!o||o.dataset.n===undefined)return;$('dq').value=o.dataset.n;draw();opn(false)};
+ document.onclick=function(e){var c=$('dcl');if(c&&!e.target.closest('.cb'))c.style.display='none'};
+ $('ds').onchange=draw;
+ function tog(row){var box=row.querySelector('.dd'),hd=row.querySelector('.due'),t=by[row.dataset.tid];
+  var open=row.classList.toggle('open');hd.setAttribute('aria-expanded',open);if(!open)return;
+  box.innerHTML='<div class="mu" style="padding:10px 0">Loading…</div>';
+  ledgerAndLog().then(function(r){box.innerHTML=dueDetail(t,r[0],r[1])}).catch(function(e){box.innerHTML='<div class="msg err">'+E(e.message||e)+'</div>'})}
+ dl.onclick=function(e){if(e.target.closest('a')||e.target.closest('.dd'))return;var row=e.target.closest('.dw');if(row)tog(row)};
+ dl.onkeydown=function(e){if(e.key==='Enter'&&e.target.classList.contains('due'))tog(e.target.parentNode)}}
+function dueDetail(t,led,log){
+ function kv(k,v){return '<div><label>'+k+'</label><b>'+v+'</b></div>'}
+ var id=String(t.tid).trim(),lr=(led.rows||[]).filter(function(x){return String(x[0]).trim()===id}),pr=(log.rows||[]).filter(function(x){return String(x[2]).trim()===id});
+ var h4='<h4 style="margin:14px 0 4px;font-size:13px">';
+ var s='<div class="fg" style="margin:10px 0">'+kv('Phone',E(t.phone||'–'))+kv('Agreement rent',inr(t.agreementRent))+kv('Current month rent',inr(t.currentMonthRent))+kv('Previous outstanding',inr(t.previousOutstanding))+kv('Total due',inr(t.totalDue))+kv('Received',inr(t.totalReceived))+kv('Remaining',inr(t.remaining))+kv('Advance credit',inr(t.advance))+kv('Status',pill(t.status))+kv('Last payment',E(t.lastPaymentDate||'–'))+kv('Agreement end',E(t.agreementEnd||'–'))+'</div>';
+ s+=h4+'Month-wise</h4>'+tbl(['Month','Opening','Rent due','Paid','Balance','Status'],lr.map(function(x){var bal=parseFloat(String(x[7]).replace(/[^0-9.\-]/g,''))>0;return '<tr><td>'+E(x[2])+'</td><td class="n">'+E(x[4])+'</td><td class="n">'+E(x[5])+'</td><td class="n g">'+E(x[6])+'</td><td class="n'+(bal?' r':'')+'">'+E(x[7])+'</td><td>'+pill(x[9])+'</td></tr>'}),[1,2,3,4]);
+ s+=h4+'Payments</h4>'+tbl(['Receipt','Date','Amount','Rent period','Status'],pr.map(function(x){return '<tr><td>'+E(x[0])+'</td><td>'+E(x[1])+'</td><td class="n g">'+E(x[8])+'</td><td>'+E(x[9])+' to '+E(x[10])+'</td><td>'+pill(x[16])+'</td></tr>'}),[2]);
+ return '<div style="background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:10px 12px;margin:4px 0 10px">'+s+'</div>'}
+
+function vTable(w){return api('webTable',w).then(function(t){var del=(w==='log'&&U.admin);var draw=function(q){q=(q||'').toLowerCase();var r=t.rows.filter(function(x){return !q||x.join(' ').toLowerCase().indexOf(q)>=0}).slice(0,400);$('tb').innerHTML=tbl(t.headers,r.map(function(x){return '<tr>'+x.map(function(c,i){return '<td>'+E(c)+(del&&i===0?'<br><button class="s" data-del="'+E(x[0])+'" style="margin-top:6px;color:var(--r);border-color:var(--r)">Delete</button>':'')+'</td>'}).join('')+'</tr>'}));if(del)[].forEach.call($('tb').querySelectorAll('button[data-del]'),function(b){b.onclick=function(){delRec(b.dataset.del,b)}})};
+ $('view').innerHTML='<div class="card"><div class="row"><input id="q" placeholder="Filter rows" style="max-width:320px"><span class="mu">'+t.rows.length+' rows (same data as the sheet)</span></div></div><div class="card" id="tb"></div>';draw();$('q').oninput=function(){draw($('q').value)}})}
+/* Admin only: delete one Rent log entry (server checks admin again). Receipt number is reused when it was the newest. */
+function delRec(id,btn){btn.disabled=true;api('getDeletePreview',id).then(function(p){
+ var m='Delete '+p.receiptId+' ('+p.tenant+', '+inr(p.amount)+', '+p.date+')?\n\nThe row is removed from RENT LOG (a copy is kept in the DELETED RECEIPTS sheet).\n'+(p.willReuse?'The next new entry will get receipt number '+p.receiptId+' again.':'Newer receipts exist, so '+p.receiptId+' will stay unused. The next new entry will be '+p.nextReceipt+'.');
+ if(p.laterForTenant>0)m+='\n\nWARNING: '+p.laterForTenant+' later receipt(s) exist for this tenant. Their printed balances were calculated with this payment and will no longer match the updated ledger. Deleting the newest receipt first is safest.';
+ if(!confirm(m)){btn.disabled=false;return}
+ return api('deleteReceipt',p.receiptId).then(function(r){if(!r.ok){btn.disabled=false;toast(r.message||'Not deleted.');return}toast(r.receiptId+' deleted. Next new entry: '+r.nextReceipt+'.'+(r.warning?' '+r.warning:''));go('log')})}).catch(function(e){btn.disabled=false;fail(e)})}
+
+function showReceipt(id){$('mb').innerHTML='<p style="padding:20px">Loading…</p>';$('modal').style.display='flex';api('generateReceipt',id).then(function(h){$('mb').innerHTML=h;$('md').onclick=function(){$('md').disabled=true;api('exportReceiptPDF',id).then(function(f){var a=document.createElement('a');a.href='data:application/pdf;base64,'+f.base64;a.download=f.name;document.body.appendChild(a);a.click();a.remove()}).catch(fail).then(function(){$('md').disabled=false})}}).catch(function(e){$('modal').style.display='none';fail(e)})}
+$('mc').onclick=function(){$('modal').style.display='none'};$('mp').onclick=function(){window.print()};
+function vRec(){$('view').innerHTML='<div class="card"><div class="row"><input id="q" placeholder="Receipt ID, tenant name or tenant ID" style="max-width:380px"><button class="p" id="sb">Search</button></div></div><div class="card" id="rr"></div>';
+ var s=function(){return api('searchReceipts',$('q').value).then(function(r){$('rr').innerHTML=tbl(['Receipt','Date','Tenant','Amount','Status',''],r.map(function(x){return '<tr><td>'+E(x.receiptId)+'</td><td>'+E(x.date)+'</td><td>'+E(x.tenant)+'</td><td class="n">'+inr(x.amount)+'</td><td>'+pill(x.status)+'</td><td><button class="s" data-id="'+E(x.receiptId)+'">View / reprint</button></td></tr>'}),[3]);[].forEach.call($('rr').querySelectorAll('button'),function(b){b.onclick=function(){showReceipt(b.dataset.id)}})}).catch(fail)};
+ $('sb').onclick=s;$('q').onkeydown=function(e){if(e.key==='Enter')s()};return s()}
+
+function vPay(){return api('getEntryInitData').then(function(d){var T=d.tenants,sel=null,tok='TXN-'+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)),prev=null,tm=null,busy=false,today=d.today;
+ $('view').innerHTML='<div class="card"><h3>Tenant</h3><div class="fg"><div><label>Payment date</label><input type="date" id="pd" value="'+today+'" max="'+today+'"></div><div class="cb"><label>Tenant (tap to choose or type to search)</label><input id="tn" autocomplete="off" placeholder="Select tenant"><button type="button" class="cbx" id="tx" aria-label="Show tenants">▾</button><div class="cl" id="tl"></div></div><div><label>Tenant ID</label><input id="ti" readonly></div><div><label>Property / room</label><input id="pr" readonly></div><div><label>Agreement rent</label><input id="rn" readonly></div><div><label>Agreement end</label><input id="ae" readonly></div></div><div id="tw"></div></div>'+
+ '<div class="card"><h3>Payment</h3><div class="fg"><div><label>Amount received (₹)</label><input type="number" id="am" min="0.01" step="0.01"></div><div><label>Payment mode</label><select id="pm"><option value="">Select mode</option><option>Cash</option><option>Online</option></select></div><div><label>Rent from</label><input type="date" id="rfm"></div><div><label>Rent till</label><input type="date" id="rtl"></div>'+(U.admin?'<div><label>Waive off (₹, admin)</label><input type="number" id="wv" min="0" step="0.01"></div><div><label>Waive reason</label><input id="wr"></div>':'')+'</div></div>'+
+ '<div class="card"><h3>Allocation preview <span class="mu" style="font-weight:400">(oldest month settled first; nothing saved until you save)</span></h3><div class="row"><b id="rem" style="font-size:20px">₹0</b><span id="stp"></span></div><div id="pe"></div><div id="pv" class="mu">Choose a tenant and enter the amount.</div></div>'+
+ '<div class="card row"><label style="display:flex;gap:8px;align-items:center;margin:0;font-size:13px;color:var(--ink)"><input type="checkbox" id="rv" style="width:auto"> I have reviewed the allocation above</label><button class="p" id="sv" disabled>Save payment</button></div><div id="se"></div><div id="ok"></div>';
+ function mdef(){var v=$('pd').value;if(!v)return;$('rfm').value=v.slice(0,7)+'-01';til()}function til(){var v=$('rfm').value;if(!v){$('rtl').value='';return}var p=v.split('-');$('rtl').value=iso(new Date(+p[0],+p[1],0))}mdef();
+ function pl(){return{tenantId:sel?sel.id:'',paymentDate:$('pd').value,amount:$('am').value,paymentMode:$('pm').value,rentFrom:$('rfm').value,rentTill:$('rtl').value,waive:U.admin?$('wv').value:'',waiveReason:U.admin?$('wr').value:'',token:tok,previewSig:prev?[prev.totals.allocated,prev.totals.outstandingAfter,prev.totals.advanceCreated].join('|'):''}}
+ function sched(){$('rv').checked=false;$('sv').disabled=true;if(!sel)return;clearTimeout(tm);tm=setTimeout(run,350)}
+ function run(){api('calculateAllocationPreview',pl()).then(rp).catch(function(e){$('pe').innerHTML='<div class="msg err">'+E(e.message||e)+'</div>'})}
+ function rp(r){$('pe').innerHTML=(r.errors&&r.errors.length)?'<div class="msg err">'+E(r.errors.join(' '))+'</div>':'';if(!r.preview){prev=null;return}var p=r.preview,t=p.totals;prev=r.ok?p:null;$('rem').textContent=inr(t.outstandingAfter);$('stp').innerHTML=pill(p.status);
+  $('pv').innerHTML=tbl(['Rent month','Opening','Rent due','Advance used','Allocated','Closing'],p.rows.map(function(x){return '<tr><td>'+E(x.month)+'</td><td class="n">'+inr(x.opening)+'</td><td class="n">'+inr(x.due)+'</td><td class="n">'+(x.advance?inr(x.advance):'–')+'</td><td class="n g">'+inr(x.allocated)+'</td><td class="n '+(x.closing>0?'r':'')+'">'+inr(x.closing)+'</td></tr>'}),[1,2,3,4,5])+'<p class="mu">Allocated '+inr(t.allocated)+(t.advanceCreated>0?' · Held as advance '+inr(t.advanceCreated):'')+(t.waived>0?' · Waived '+inr(t.waived):'')+'</p>'}
+ $('tn').oninput=function(){var m=T.filter(function(t){return t.name===$('tn').value})[0];sel=m||null;$('ti').value=m?m.id:'';$('pr').value=m?m.property:'';$('rn').value=m?inr(m.rent):'';$('ae').value=m?m.end:'';$('tw').innerHTML=m&&m.pendingReview?'<div class="msg warn">A rent or agreement change is waiting for administrator review. The previously recorded rent is used until it is confirmed.</div>':'';if(!m){prev=null;$('pv').textContent='Choose a tenant and enter the amount.'}sched()};
+
+ function cl(q){q=(q||'').toLowerCase();var m=T.filter(function(t){return !q||String(t.name).toLowerCase().indexOf(q)>=0});$('tl').innerHTML=m.length?m.map(function(t){return '<div class="co" data-n="'+E(t.name)+'">'+E(t.name)+'<span class="mu">'+E(t.id)+'</span></div>'}).join(''):'<div class="co mu">No match</div>'}
+ function opn(v){$('tl').style.display=v?'block':'none'}
+ $('tn').addEventListener('input',function(){cl($('tn').value);opn(true)});
+ $('tn').addEventListener('focus',function(){cl('');opn(true)});
+ $('tx').onclick=function(){cl('');opn(true);$('tn').focus()};
+ $('tl').onclick=function(e){var o=e.target.closest('.co');if(!o||!o.dataset.n)return;$('tn').value=o.dataset.n;$('tn').oninput();opn(false)};
+ document.addEventListener('click',function(e){if($('tl')&&!e.target.closest('.cb'))opn(false)});
+
+ $('pd').onchange=function(){mdef();sched()};$('rfm').onchange=function(){til();sched()};['am','rtl','pm'].forEach(function(i){$(i).oninput=sched});if(U.admin)$('wv').oninput=sched;
+ $('rv').onchange=function(){$('sv').disabled=!($('rv').checked&&prev&&!busy)};
+ $('sv').onclick=function(){if(busy)return;busy=true;$('sv').disabled=true;$('sv').textContent='Saving…';$('se').innerHTML='';api('submitPayment',pl()).then(function(r){busy=false;$('sv').textContent='Save payment';
+  if(r.ok){$('ok').innerHTML='<div class="msg ok"><b>'+E(r.duplicate?'Already recorded: ':'Payment recorded: ')+E(r.receiptId)+'</b><br>'+(r.duplicate?E(r.message):E(r.tenantName)+' · '+inr(r.amount)+' · '+E(r.status)+' · Remaining '+inr(r.outstandingAfter)+(r.warning?' · '+E(r.warning):''))+'<div class="row" style="margin-top:8px"><button class="p" id="vr">View / print receipt</button><button id="na">Record another payment</button></div></div>';$('vr').onclick=function(){showReceipt(r.receiptId)};$('na').onclick=function(){go('pay')};$('sv').style.display='none';return}
+  if(r.stale&&r.preview)rp({ok:true,preview:r.preview,errors:[]});$('se').innerHTML='<div class="msg err">'+E(r.message||(r.errors||[]).join(' ')||'Not saved.')+'</div>';$('rv').checked=false}).catch(function(e){busy=false;$('sv').textContent='Save payment';$('sv').disabled=false;$('se').innerHTML='<div class="msg err">Not saved: '+E(e.message||e)+' Pressing Save again will not create a duplicate.</div>'})}})}
+
+function vRev(){return api('getPendingRevisions').then(function(L){if(!L.length){$('view').innerHTML='<div class="card mu">Nothing is waiting for review. Every agreement matches its recorded terms.</div>';return}
+ $('view').innerHTML=L.map(function(x,i){return '<div class="card"><b>'+E(x.name)+' ('+E(x.tid)+')</b> <span class="mu">'+E(x.type.replace(/_/g,' ').toLowerCase())+'</span><p>'+(x.prev!==null?inr(x.prev)+' → ':'')+inr(x.rent)+' per month · agreement '+E(x.start)+' to '+E(x.end)+'</p><div class="row">'+(x.type!=='END_DATE_CHANGE'?'<div><label>Effective from</label><input type="date" id="ef'+i+'" value="'+E(x.suggested)+'"></div>':'')+'<button class="p" data-a="c" data-i="'+i+'">Confirm change</button><button data-a="r" data-i="'+i+'">Reject</button></div><div id="rm'+i+'"></div></div>'}).join('');
+ [].forEach.call($('view').querySelectorAll('button'),function(b){b.onclick=function(){var i=+b.dataset.i,x=L[i];if(b.dataset.a==='r'){if(!confirm('Reject this change? It will be flagged again on the next refresh unless the parent register is corrected.'))return;api('rejectRentRevision',x.ref).then(function(){toast('Rejected.');go('rev')}).catch(fail);return}
+  var ef=$('ef'+i),go2=function(cp){api('recordRentRevision',x.ref,ef?ef.value:'',cp).then(function(r){if(r.ok){toast('Change recorded. Ledger rebuilt.');go('rev')}else if(r.needsConfirm){if(confirm(r.message+'\n\nContinue?'))go2(true)}else $('rm'+i).innerHTML='<div class="msg err">'+E(r.message)+'</div>'}).catch(fail)};go2(false)}})})}
+
+function vSet(){return api('webGetSettings').then(function(S){$('view').innerHTML='<div class="card"><h3>System settings</h3><p class="mu">These are the same values as the SETTINGS sheet. Changes apply immediately.</p>'+S.map(function(s,i){return '<div style="margin-bottom:12px"><label>'+E(s.key)+' — '+E(s.note)+'</label><input data-k="'+E(s.key)+'" value="'+E(s.value)+'"></div>'}).join('')+'<div class="row"><button class="p" id="ss">Save settings</button><button id="rb">Rebuild ledger</button></div></div>';
+ $('ss').onclick=function(){api('webSaveSettings',[].map.call($('view').querySelectorAll('input[data-k]'),function(i){return{key:i.dataset.k,value:i.value}})).then(function(){toast('Settings saved.')}).catch(fail)};
+ $('rb').onclick=function(){if(!confirm('Rebuild the ledger from the rent log? No payments or receipts change.'))return;api('rebuildRentLedger').then(function(n){toast('Ledger rebuilt: '+n+' rows.')}).catch(fail)}})}
+
+/* Tenant payment statement: pick tenant + date range, opens printable statement in the modal. */
+function vStmt(){return api('getEntryInitData').then(function(d){var T=d.tenants,sel=null,today=d.today;
+ $('view').innerHTML='<div class="card"><h3>Tenant payment statement</h3><div class="fg"><div class="cb"><label>Tenant</label><input id="st" autocomplete="off" placeholder="Select tenant"><button type="button" class="cbx" id="sx" aria-label="Show tenants">▾</button><div class="cl" id="sl"></div></div><div><label>Period</label><select id="sp"><option value="fy">This financial year</option><option value="month">This month</option><option value="q">Last 3 months</option><option value="all">All time</option><option value="c">Custom</option></select></div><div><label>From date</label><input type="date" id="sf"></div><div><label>To date</label><input type="date" id="se" max="'+today+'"></div></div><div class="row" style="margin-top:14px"><button class="p" id="sg">Show statement</button></div><div id="sm"></div></div>';
+ function preset(v){var t=new Date(today+'T00:00:00'),f;
+  if(v==='month')f=new Date(t.getFullYear(),t.getMonth(),1);
+  else if(v==='q')f=new Date(t.getFullYear(),t.getMonth()-2,1);
+  else if(v==='fy')f=new Date(t.getMonth()>=3?t.getFullYear():t.getFullYear()-1,3,1);
+  else f=new Date(2000,0,1);
+  $('sf').value=iso(f);$('se').value=today}
+ preset('fy');
+ $('sp').onchange=function(){if($('sp').value!=='c')preset($('sp').value)};
+ $('sf').onchange=$('se').onchange=function(){$('sp').value='c'};
+ function find(n){return T.filter(function(t){return t.name===n})[0]||null}
+ function cl(q){q=(q||'').toLowerCase();var m=T.filter(function(t){return !q||String(t.name).toLowerCase().indexOf(q)>=0});
+  $('sl').innerHTML=m.length?m.map(function(t){return '<div class="co" data-n="'+E(t.name)+'">'+E(t.name)+'<span class="mu">'+E(t.id)+'</span></div>'}).join(''):'<div class="co mu">No match</div>'}
+ function opn(v){$('sl').style.display=v?'block':'none'}
+ $('st').oninput=function(){sel=find($('st').value);cl($('st').value);opn(true)};
+ $('st').onfocus=function(){cl('');opn(true)};
+ $('sx').onclick=function(){if($('sl').style.display==='block'){opn(false)}else{cl('');opn(true)}};
+ $('sl').onclick=function(e){var o=e.target.closest('.co');if(!o||!o.dataset.n)return;$('st').value=o.dataset.n;sel=find(o.dataset.n);opn(false)};
+ document.addEventListener('click',function(e){var c=$('sl');if(c&&!e.target.closest('.cb'))c.style.display='none'});
+ $('sg').onclick=function(){var f=$('sf').value,e=$('se').value,m=$('sm'),b=$('sg');
+  if(!sel){m.innerHTML='<div class="msg err">Select a tenant first.</div>';return}
+  if(!f||!e||f>e){m.innerHTML='<div class="msg err">Check the dates. From date must be on or before To date.</div>';return}
+  m.innerHTML='';b.disabled=true;b.textContent='Loading…';
+  Promise.all([api('webTable','ledger'),api('webTable','log')]).then(function(r){
+   $('mb').innerHTML=stmtHtml(sel,f,e,r[0],r[1],today);
+   $('md').disabled=false;
+   $('md').onclick=function(){toast('In the print window, choose "Save as PDF" as the destination.');setTimeout(function(){window.print()},400)};
+   $('modal').style.display='flex'}).catch(fail).then(function(){b.disabled=false;b.textContent='Show statement'})}})}
+
+function stmtHtml(t,f,e,led,log,today){
+ var num=function(v){return parseFloat(String(v).replace(/[^0-9.\-]/g,''))||0},
+ nd=function(s){s=String(s==null?'':s).trim();if(!s)return '';var m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[1]+'-'+m[2]+'-'+m[3];m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);if(m)return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2);var p=Date.parse(s);return isNaN(p)?'':iso(new Date(p))},
+ dm=function(s){return s?s.slice(8,10)+'-'+s.slice(5,7)+'-'+s.slice(0,4):'–'},
+ dd=function(v){var n=nd(v);return n?dm(n):E(v||'–')},
+ id=String(t.id).trim(),
+ H=(log.headers||[]).map(function(h){return String(h).toLowerCase()});
+ function ci(re,d,skip){for(var i=0;i<H.length;i++){if(re.test(H[i])&&!(skip&&skip.test(H[i])))return i}return d}
+ var cR=ci(/receipt/,0),cD=ci(/date/,1,/rent|from|till|entry|created|period/),cT=ci(/tenant.*id|^tid|^id$/,2),
+ cA=ci(/^amount|amount (received|paid)|^received|^paid/,8,/waive|balance|advance|outstanding|due/),
+ cF=ci(/rent from|period from|from/,9),cU=ci(/rent till|period to|till|^to$/,10),cS=ci(/status/,16),mi=ci(/mode/,-1);
+ var all=log.rows||[],
+ P=all.filter(function(x){var d=nd(x[cD]);return d&&d>=f&&d<=e&&x.some(function(c){return String(c).trim()===id})}).sort(function(a,b){return nd(a[cD]).localeCompare(nd(b[cD]))||String(a[cR]).localeCompare(String(b[cR]))}),run=0,
+ rows=P.map(function(x){var a=num(x[cA]);run+=a;return '<tr><td>'+dm(nd(x[cD]))+'</td><td>'+E(x[cR])+'</td><td>'+dd(x[cF])+' to '+dd(x[cU])+'</td>'+(mi>=0?'<td>'+E(x[mi])+'</td>':'')+'<td class="n g">'+inr(a)+'</td><td class="n">'+inr(run)+'</td><td>'+pill(x[cS])+'</td></tr>'}).join(''),
+ cols=mi>=0?7:6,
+ LR=(led.rows||[]).filter(function(x){if(String(x[0]).trim()!==id)return false;var dt=new Date('1 '+x[2]);if(isNaN(dt))return true;var ym=dt.getFullYear()+'-'+('0'+(dt.getMonth()+1)).slice(-2);return ym>=f.slice(0,7)&&ym<=e.slice(0,7)}),
+ charged=LR.reduce(function(s,x){return s+num(x[5])},0),
+ close=LR.length?num(LR[LR.length-1][7]):null,
+ per=f==='2000-01-01'?'All dates up to '+dm(e):dm(f)+' to '+dm(e),
+ dbg=P.length?'':'<div class="mu" style="font-size:11px;margin-top:4px">Rent log rows: '+all.length+' · date column: '+E(H[cD]||'?')+' · tenant ID column: '+E(H[cT]||'?')+' · amount column: '+E(H[cA]||'?')+(all[0]?' · first row date: '+E(all[0][cD]):'')+'</div>';
+ function kv(k,v){return '<div><label>'+k+'</label><b>'+v+'</b></div>'}
+ return '<div class="stm"><div class="sh"><div><h2>'+E(U.business||'Rent Payment')+'</h2><div class="mu">Tenant payment statement</div></div><div class="mu" style="text-align:right">Generated on '+dm(today)+'</div></div>'+
+ '<div class="fg" style="margin-bottom:14px">'+kv('Tenant',E(t.name))+kv('Tenant ID',E(t.id))+kv('Property / room',E(t.property||'–'))+kv('Statement period',per)+'</div>'+
+ '<div class="kp"><div class="k"><span>Rent charged</span><b>'+(LR.length?inr(charged):'–')+'</b></div><div class="k g"><span>Total received</span><b>'+inr(run)+'</b></div><div class="k b"><span>Payments</span><b>'+P.length+'</b></div><div class="k '+(close>0?'r':'g')+'"><span>Balance at period end</span><b>'+(close===null?'–':inr(close))+'</b></div></div>'+
+ '<h4>Payments</h4><div class="ov"><table><thead><tr><th>Date</th><th>Receipt</th><th>Rent period</th>'+(mi>=0?'<th>Mode</th>':'')+'<th class="n">Amount</th><th class="n">Total received</th><th>Status</th></tr></thead><tbody>'+(rows||'<tr><td colspan="'+cols+'" class="mu">No payments in this period.'+dbg+'</td></tr>')+'</tbody><tfoot><tr><td colspan="'+(cols-3)+'">Total received</td><td class="n">'+inr(run)+'</td><td></td><td></td></tr></tfoot></table></div>'+
+ '<h4>Month-wise summary</h4><div class="ov"><table><thead><tr><th>Month</th><th class="n">Opening</th><th class="n">Rent due</th><th class="n">Paid</th><th class="n">Balance</th><th>Status</th></tr></thead><tbody>'+(LR.length?LR.map(function(x){var bal=num(x[7])>0;return '<tr><td>'+E(x[2])+'</td><td class="n">'+E(x[4])+'</td><td class="n">'+E(x[5])+'</td><td class="n g">'+E(x[6])+'</td><td class="n'+(bal?' r':'')+'">'+E(x[7])+'</td><td>'+pill(x[9])+'</td></tr>'}).join(''):'<tr><td colspan="6" class="mu">No ledger months in this period.</td></tr>')+'</tbody></table></div>'+
+ '<div class="ft">This is a computer-generated statement and does not require a signature.</div></div>'}
+
+api('webInit').then(function(u){U=u;$('biz').textContent=u.business;$('who').innerHTML=E(u.email)+'<br>'+(u.admin?'Administrator':'Operator');go('dash')}).catch(function(e){$('view').innerHTML='<div class="msg err">'+E(e.message||e)+'</div>'});
+</script></body></html>
