@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1f2a44;--paper:#fff;--wash:#f3f5f9;--rule:#d9dde5;--green:#1b7f4b;--red:#c0392b;--orange:#d9822b;--blue:#2563a8;--muted:#5d6678}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 'IBM Plex Sans',Arial,sans-serif;color:var(--ink);background:var(--paper)}
+  header{padding:14px 22px;background:var(--ink);color:#fff}
+  header h1{margin:0;font-size:17px;font-weight:600}
+  header div{font-size:12px;opacity:.75}
+  main{padding:16px 22px 90px}
+  h2{font-size:14px;margin:18px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+  input,select{width:100%;padding:8px 10px;font:inherit;border:1px solid #b9c0cf;border-radius:4px;background:#fff;color:var(--ink)}
+  input:focus{outline:2px solid var(--blue);outline-offset:0}
+  input[readonly]{background:var(--wash);color:#3b4459;border-color:var(--rule)}
+  .combo{position:relative}
+  .list{position:absolute;z-index:5;left:0;right:0;top:100%;max-height:230px;overflow:auto;background:#fff;border:1px solid #b9c0cf;border-top:0;border-radius:0 0 4px 4px;display:none;box-shadow:0 6px 14px rgba(31,42,68,.12)}
+  .list div{padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--wash)}
+  .list div:hover,.list div.on{background:var(--wash)}
+  .list small{color:var(--muted);display:block}
+  .box{margin-top:12px;padding:12px 14px;border:1px solid var(--rule);background:var(--wash);border-radius:4px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .box .amt{font-size:22px;font-weight:600}
+  .pill{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;background:var(--muted)}
+  .PAID{background:var(--green)}.PARTIAL{background:var(--orange)}.UNPAID{background:var(--red)}.ADVANCE{background:var(--blue)}
+  table{width:100%;border-collapse:collapse;margin-top:6px}
+  th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--rule);font-variant-numeric:tabular-nums}
+  th:first-child,td:first-child{text-align:left}
+  th{font-size:12px;color:var(--muted);font-weight:500;border-bottom:1px solid #9aa3b6}
+  tfoot td{font-weight:600;border-bottom:0}
+  .alloc{color:var(--green);font-weight:600}.out{color:var(--red)}
+  .msg{margin:12px 0;padding:10px 12px;border-radius:4px;display:none}
+  .err{background:#fbeae8;border:1px solid #e6b3ad;color:#8a2a20}
+  .warn{background:#fdf1e2;border:1px solid #efcf9f;color:#7a4a0c}
+  .ok{background:#e4f4ea;border:1px solid #a9d8bc;color:#14532d}
+  footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--rule);padding:10px 22px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+  button{font:inherit;padding:9px 18px;border-radius:4px;border:1px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer}
+  button.primary{background:var(--ink);color:#fff}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
+  .chk input{width:auto}
+  .hint{font-size:12px;color:var(--muted)}
+  #success{display:none}
+  #success .big{font-size:18px;font-weight:600;margin-bottom:6px}
+  #success button{margin:8px 8px 0 0}
+  @media(max-width:600px){main{padding:12px}.box .amt{font-size:18px}}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header><h1>Record a rent payment</h1><div id="biz"></div></header>
+<main>
+  <div id="loadErr" class="msg err"></div>
+  <div id="formArea">
+    <h2>Tenant</h2>
+    <div class="grid">
+      <div><label for="payDate">Payment date</label><input type="date" id="payDate"></div>
+      <div class="combo">
+        <label for="tenantSearch">Tenant name (type to search)</label>
+        <input type="text" id="tenantSearch" autocomplete="off" placeholder="Search by name, code or phone">
+        <div class="list" id="tenantList" role="listbox"></div>
+      </div>
+      <div><label>Tenant ID</label><input id="tid" readonly></div>
+      <div><label>Property / room</label><input id="prop" readonly></div>
+      <div><label>Phone number</label><input id="phone" readonly></div>
+      <div><label>Agreement rent (monthly)</label><input id="rent" readonly></div>
+      <div><label>Agreement start</label><input id="astart" readonly></div>
+      <div><label>Agreement end</label><input id="aend" readonly></div>
+    </div>
+    <div id="tenantWarn" class="msg warn"></div>
+
+    <h2>Payment</h2>
+    <div class="grid">
+      <div><label for="amount">Amount received (₹)</label><input type="number" id="amount" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+      <div><label for="payMode">Payment mode</label>
+    <select id="payMode">
+      <option value="">Select mode</option>
+      <option value="Cash">Cash</option>
+      <option value="Online">Online</option>
+    </select>
+  </div>
+      <div><label for="rentFrom">Rent from</label><input type="date" id="rentFrom"></div>
+      <div><label for="rentTill">Rent till</label><input type="date" id="rentTill"></div>
+    </div>
+    <div id="waiveBox" style="display:none">
+      <div class="grid">
+        <div><label for="waive">Waive off amount (₹), admin only</label><input type="number" id="waive" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+        <div><label for="waiveReason">Waive off reason (compulsory)</label><input type="text" id="waiveReason" placeholder="Reason likho"></div>
+      </div>
+    </div>
+    <div class="box" id="remBox">
+      <div><div class="hint">REMAINING AMOUNT</div><div class="amt" id="remaining">₹0</div></div>
+      <div><span class="pill" id="statusPill">Select a tenant</span></div>
+      <div class="hint" id="remNote"></div>
+    </div>
+
+    <h2>Allocation preview <span class="hint">(oldest month is settled first · nothing is saved until you submit)</span></h2>
+    <div id="previewErr" class="msg err"></div>
+    <table id="prev">
+      <thead><tr><th>Rent month</th><th>Opening outstanding</th><th>Rent due</th><th>Advance used</th><th>Payment allocated</th><th>Closing outstanding</th></tr></thead>
+      <tbody id="prevBody"><tr><td colspan="6" class="hint">Choose a tenant and enter the amount to see the breakdown.</td></tr></tbody>
+      <tfoot id="prevFoot"></tfoot>
+    </table>
+    <div id="submitErr" class="msg err"></div>
+  </div>
+
+  <div id="success" class="msg ok">
+    <div class="big" id="sTitle"></div>
+    <div id="sBody"></div>
+    <button class="primary" id="btnView">View / print receipt</button>
+    <button id="btnPdf">Export PDF</button>
+    <button id="btnNew">Record another payment</button>
+  </div>
+</main>
+<footer id="foot">
+  <label class="chk"><input type="checkbox" id="reviewed"> I have reviewed the allocation above</label>
+  <div><button id="btnClose">Close</button> <button class="primary" id="btnSubmit" disabled>Save payment</button></div>
+</footer>
+
+<script>
+var tenants = [], sel = null, token = '', seq = 0, timer = null, lastPreview = null, rentFromTouched = false, saving = false, savedId = '';
+function $(id){ return document.getElementById(id); }
+function inr(n){ n = Number(n)||0; return '₹' + n.toLocaleString('en-IN',{minimumFractionDigits: (n%1?2:0), maximumFractionDigits:2}); }
+function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function pretty(s){ if(!s) return ''; var p=s.split('-'); return p[2]+'-'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1]-1]+'-'+p[0]; }
+function newToken(){ var u = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36)+Math.random().toString(36).slice(2)); return 'TXN-' + u; }
+function show(id, text){ var e=$(id); e.textContent = text||''; e.style.display = text ? 'block':'none'; }
+
+function init(d){
+  tenants = d.tenants; $('biz').textContent = d.business;
+  $('payDate').value = d.today; $('payDate').max = d.today;
+  setRentFromDefault(); token = newToken();
+  if(d.isAdmin) $('waiveBox').style.display = 'block';
+  if(!tenants.length) show('loadErr','No active tenants were found in the Rental Agreement Register.');
+}
+function loadFail(e){ show('loadErr', 'Could not load the form: ' + (e && e.message ? e.message : e)); }
+google.script.run.withSuccessHandler(init).withFailureHandler(loadFail).getEntryInitData();
+
+function setRentFromDefault(){
+  var p = $('payDate').value; if(!p) return;
+  $('rentFrom').value = p.slice(0,7) + '-01'; rentFromTouched = false; updateTill();
+}
+function updateTill(){
+  var v = $('rentFrom').value; if(!v){ $('rentTill').value=''; return; }
+  var p=v.split('-'); $('rentTill').value = iso(new Date(+p[0], +p[1], 0));
+}
+
+/* ---------- searchable tenant dropdown ---------- */
+var list = $('tenantList'), cursor = -1;
+function renderList(){
+  var q = $('tenantSearch').value.trim().toLowerCase(); list.innerHTML=''; cursor=-1;
+  var hits = tenants.filter(function(t){ return !q || (t.name+' '+t.id+' '+t.phone+' '+t.property).toLowerCase().indexOf(q)>=0; });
+  hits.forEach(function(t){
+    var d = document.createElement('div'); d.setAttribute('role','option');
+    d.textContent = t.name; var s = document.createElement('small'); s.textContent = t.id + ' · ' + t.property.slice(0,60); d.appendChild(s);
+    d.onmousedown = function(e){ e.preventDefault(); pick(t); };
+    list.appendChild(d);
+  });
+  if(!hits.length){ var n=document.createElement('div'); n.textContent='No active tenant matches'; list.appendChild(n); }
+  list.style.display='block';
+}
+$('tenantSearch').addEventListener('focus', renderList);
+$('tenantSearch').addEventListener('input', function(){ sel=null; clearTenant(); renderList(); });
+$('tenantSearch').addEventListener('blur', function(){ setTimeout(function(){ list.style.display='none'; },120); });
+$('tenantSearch').addEventListener('keydown', function(e){
+  var items = list.children; if(!items.length) return;
+  if(e.key==='ArrowDown'){ cursor=Math.min(cursor+1,items.length-1); }
+  else if(e.key==='ArrowUp'){ cursor=Math.max(cursor-1,0); }
+  else if(e.key==='Enter' && cursor>=0){ items[cursor].onmousedown(e); return; } else return;
+  for(var i=0;i<items.length;i++) items[i].className = i===cursor?'on':''; e.preventDefault();
+});
+function clearTenant(){ ['tid','prop','phone','rent','astart','aend'].forEach(function(i){ $(i).value=''; }); show('tenantWarn',''); resetPreview(); }
+function pick(t){
+  sel = t; $('tenantSearch').value = t.name; list.style.display='none';
+  $('tid').value=t.id; $('prop').value=t.property; $('phone').value=t.phone; $('rent').value=inr(t.rent);
+  $('astart').value=pretty(t.start); $('aend').value=pretty(t.end);
+  show('tenantWarn', t.pendingReview ? 'A rent or agreement change for this tenant is waiting for administrator review. Until it is confirmed, the previously recorded rent is used.' : '');
+  schedule();
+}
+
+/* ---------- live preview ---------- */
+function resetPreview(){
+  lastPreview=null; $('reviewed').checked=false; $('btnSubmit').disabled=true; $('remaining').textContent='₹0';
+  var p=$('statusPill'); p.textContent='Select a tenant'; p.className='pill'; $('remNote').textContent='';
+  $('prevBody').innerHTML='<tr><td colspan="6" class="hint">Choose a tenant and enter the amount to see the breakdown.</td></tr>'; $('prevFoot').innerHTML=''; show('previewErr','');
+}
+function schedule(){
+  if(!sel){ return; } clearTimeout(timer); $('reviewed').checked=false; $('btnSubmit').disabled=true; timer=setTimeout(runPreview,350);
+}
+function payload(){
+  return { tenantId: sel ? sel.id : '', paymentDate: $('payDate').value, amount: $('amount').value, paymentMode: $('payMode').value, rentFrom: $('rentFrom').value, rentTill: $('rentTill').value, waive: $('waive').value, waiveReason: $('waiveReason').value, token: token,
+           previewSig: lastPreview ? [lastPreview.totals.allocated, lastPreview.totals.outstandingAfter, lastPreview.totals.advanceCreated].join('|') : '' };
+}
+function runPreview(){
+  var my = ++seq; $('remNote').textContent = 'Calculating…';
+  google.script.run.withSuccessHandler(function(r){ if(my===seq) renderPreview(r); })
+    .withFailureHandler(function(e){ if(my===seq){ show('previewErr', e.message||e); $('remNote').textContent=''; } })
+    .calculateAllocationPreview(payload());
+}
+function cell(tr, text, cls){ var td=document.createElement('td'); td.textContent=text; if(cls) td.className=cls; tr.appendChild(td); }
+function renderPreview(r){
+  $('remNote').textContent='';
+  show('previewErr', (r.errors||[]).join(' '));
+  if(!r.preview){ lastPreview=null; return; }
+  var p = r.preview, t = p.totals; lastPreview = r.ok ? p : null;
+  $('remaining').textContent = inr(t.outstandingAfter);
+  var pill=$('statusPill'); pill.className='pill ' + p.status;
+  pill.textContent = ({PAID:'PAID',PARTIAL:'PARTIAL PAYMENT',UNPAID:'UNPAID',ADVANCE:'ADVANCE PAID'})[p.status] || p.status;
+  $('remNote').textContent = t.advanceCreated>0 ? ('Advance credit created: ' + inr(t.advanceCreated)) : (t.previousOutstanding>0 ? ('Includes previous outstanding ' + inr(t.previousOutstanding)) : '');
+  var b=$('prevBody'); b.innerHTML='';
+  if(!p.rows.length){ b.innerHTML='<tr><td colspan="6" class="hint">Nothing is outstanding up to '+p.targetMonth+'.</td></tr>'; }
+  p.rows.forEach(function(x){
+    var tr=document.createElement('tr');
+    cell(tr,x.month); cell(tr,inr(x.opening)); cell(tr,inr(x.due)); cell(tr,x.advance?inr(x.advance):'–'); cell(tr,inr(x.allocated),'alloc'); cell(tr,inr(x.closing),x.closing>0?'out':'');
+    b.appendChild(tr);
+  });
+  var f=$('prevFoot'); f.innerHTML='';
+  function frow(a,b2){ var tr=document.createElement('tr'); var c1=document.createElement('td'); c1.colSpan=5; c1.textContent=a; c1.style.textAlign='right'; var c2=document.createElement('td'); c2.textContent=b2; tr.appendChild(c1); tr.appendChild(c2); f.appendChild(tr); }
+  frow('Total payment', inr(t.payment)); frow('Total allocated to rent', inr(t.allocated));
+  if(t.advanceUsed>0) frow('Advance credit used', inr(t.advanceUsed));
+  if(t.advanceCreated>0) frow('Held as advance credit', inr(t.advanceCreated));
+  if(t.waived>0) frow('Waived off', inr(t.waived));
+  frow('Remaining outstanding', inr(t.outstandingAfter));
+}
+
+['payDate'].forEach(function(i){ $(i).addEventListener('change', function(){ if(!rentFromTouched) setRentFromDefault(); schedule(); }); });
+$('rentFrom').addEventListener('change', function(){ rentFromTouched=true; updateTill(); schedule(); });
+$('amount').addEventListener('input', schedule);
+$('waive').addEventListener('input', schedule);
+$('rentTill').addEventListener('change', schedule);
+$('reviewed').addEventListener('change', function(){ $('btnSubmit').disabled = !($('reviewed').checked && lastPreview && !saving); });
+
+/* ---------- submit ---------- */
+$('btnSubmit').onclick = function(){
+  if(saving) return; saving = true; $('btnSubmit').disabled = true; $('btnSubmit').textContent='Saving…'; show('submitErr','');
+  google.script.run.withSuccessHandler(function(r){
+    saving=false; $('btnSubmit').textContent='Save payment';
+    if(r.ok){ done(r); return; }
+    if(r.stale && r.preview){ renderPreview({ok:true,preview:r.preview,errors:[]}); $('reviewed').checked=false; }
+    show('submitErr', r.message || (r.errors||[]).join(' ') || 'The payment was not saved.');   // form is kept
+    $('btnSubmit').disabled = !($('reviewed').checked && lastPreview);
+  }).withFailureHandler(function(e){
+    saving=false; $('btnSubmit').textContent='Save payment'; $('btnSubmit').disabled=false;
+    show('submitErr', 'Not saved: ' + (e.message||e) + ' You can press Save payment again; it will not create a duplicate.');
+  }).submitPayment(payload());
+};
+function done(r){
+  savedId = r.receiptId; $('formArea').style.display='none'; $('foot').style.display='none';
+  $('success').style.display='block';
+  $('sTitle').textContent = (r.duplicate ? 'Already recorded: ' : 'Payment recorded: ') + r.receiptId;
+  $('sBody').textContent = r.duplicate ? r.message : (r.tenantName + ' · ' + inr(r.amount) + ' · ' + r.status + ' · Remaining ' + inr(r.outstandingAfter) + (r.advance>0 ? ' · Advance ' + inr(r.advance) : '') + (r.warning ? '  ' + r.warning : ''));
+}
+$('btnView').onclick = function(){ google.script.run.withFailureHandler(function(e){ alert(e.message); }).showReceiptDialog(savedId); };
+$('btnPdf').onclick = function(){
+  $('btnPdf').disabled = true; $('btnPdf').textContent = 'Preparing…';
+  google.script.run.withSuccessHandler(function(f){
+    var a=document.createElement('a'); a.href='data:application/pdf;base64,'+f.base64; a.download=f.name; document.body.appendChild(a); a.click(); a.remove();
+    $('btnPdf').disabled=false; $('btnPdf').textContent='Export PDF';
+  }).withFailureHandler(function(e){ alert(e.message); $('btnPdf').disabled=false; $('btnPdf').textContent='Export PDF'; }).exportReceiptPDF(savedId);
+};
+$('btnNew').onclick = function(){
+  $('success').style.display='none'; $('formArea').style.display='block'; $('foot').style.display='flex';
+  sel=null; $('tenantSearch').value=''; $('amount').value=''; $('payMode').value=''; $('waive').value=''; $('waiveReason').value=''; clearTenant(); token=newToken();
+  google.script.run.withSuccessHandler(function(d){ tenants=d.tenants; }).getEntryInitData(); $('payDate').value = $('payDate').max; setRentFromDefault();
+};
+$('btnClose').onclick = function(){ google.script.host.close(); };
+</script>
+</body>
+</html>
