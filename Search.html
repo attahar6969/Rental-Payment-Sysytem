@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1f2a44;--rule:#d9dde5;--wash:#f3f5f9;--green:#1b7f4b;--red:#c0392b;--orange:#d9822b;--blue:#2563a8}
+  body{margin:0;font:14px/1.45 'IBM Plex Sans',Arial,sans-serif;color:var(--ink)}
+  .top{padding:16px 20px;border-bottom:1px solid var(--rule);display:flex;gap:10px}
+  input{flex:1;padding:9px 10px;font:inherit;border:1px solid #b9c0cf;border-radius:4px}
+  button{font:inherit;padding:8px 16px;border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:4px;cursor:pointer}
+  button.l{background:#fff;color:var(--ink);padding:5px 12px}
+  button.d{background:#fff;color:var(--red);border-color:var(--red);padding:5px 12px;margin-left:6px}
+  button.dd{background:var(--red);border-color:var(--red)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px 12px;border-bottom:1px solid var(--rule);text-align:left;white-space:nowrap}
+  th{font-size:12px;color:#5d6678;font-weight:600;position:sticky;top:0;background:#fff}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  .s{font-weight:600}.PAID{color:var(--green)}.PARTIAL{color:var(--orange)}.UNPAID{color:var(--red)}.ADVANCE{color:var(--blue)}
+  .empty{padding:30px 20px;color:#5d6678}
+  #wrap{max-height:430px;overflow:auto}
+  #cf{display:none;margin:0;padding:14px 20px;background:#fbeae8;border-bottom:1px solid #e6b3ad;color:#8a2a20}
+  #cf p{margin:0 0 8px}
+  #cf .w{color:#7a4a0c;background:#fdf1e2;border:1px solid #efcf9f;padding:6px 10px;border-radius:4px}
+  #cf button{margin-right:8px}
+  #note{display:none;padding:12px 20px;background:#e4f4ea;border-bottom:1px solid #a9d8bc;color:#14532d}
+</style>
+</head>
+<body>
+<div class="top"><input id="q" placeholder="Receipt ID (RENT-2026-001), tenant name or tenant ID" autofocus><button id="go">Search</button></div>
+<div id="note"></div>
+<div id="cf"></div>
+<div id="wrap"><div class="empty">Type a receipt ID or tenant name. Leave blank to see the latest receipts.</div></div>
+<script>
+var isAdmin = false;
+function $(i){return document.getElementById(i);}
+function inr(n){return '₹'+Number(n).toLocaleString('en-IN',{minimumFractionDigits:(n%1?2:0),maximumFractionDigits:2});}
+function go(){
+  $('wrap').innerHTML='<div class="empty">Searching…</div>';
+  google.script.run.withSuccessHandler(render).withFailureHandler(function(e){$('wrap').innerHTML='<div class="empty">'+(e.message||e)+'</div>';}).searchReceipts($('q').value);
+}
+function render(rows){
+  if(!rows.length){ $('wrap').innerHTML='<div class="empty">No receipts match that search.</div>'; return; }
+  var t=document.createElement('table'); t.innerHTML='<thead><tr><th>Receipt</th><th>Date</th><th>Tenant</th><th class="n">Amount</th><th>Status</th><th></th></tr></thead>';
+  var b=document.createElement('tbody');
+  rows.forEach(function(r){
+    var tr=document.createElement('tr');
+    [r.receiptId,r.date,r.tenant].forEach(function(v){var td=document.createElement('td');td.textContent=v;tr.appendChild(td);});
+    var a=document.createElement('td');a.className='n';a.textContent=inr(r.amount);tr.appendChild(a);
+    var s=document.createElement('td');s.className='s '+r.status;s.textContent=r.status;tr.appendChild(s);
+    var v=document.createElement('td');var bt=document.createElement('button');bt.className='l';bt.textContent='View / reprint';
+    bt.onclick=function(){bt.disabled=true;bt.textContent='Opening…';google.script.run.withFailureHandler(function(e){alert(e.message);bt.disabled=false;bt.textContent='View / reprint';}).showReceiptDialog(r.receiptId);};
+    v.appendChild(bt);
+    if(isAdmin){
+      var dl=document.createElement('button');dl.className='d';dl.textContent='Delete';
+      dl.onclick=function(){askDelete(r.receiptId,dl);};
+      v.appendChild(dl);
+    }
+    tr.appendChild(v);b.appendChild(tr);
+  });
+  t.appendChild(b);$('wrap').innerHTML='';$('wrap').appendChild(t);
+}
+
+/* ---------- delete (administrator only; the server checks this again) ---------- */
+function closeConfirm(){ $('cf').style.display='none'; $('cf').innerHTML=''; }
+function askDelete(id,btn){
+  $('note').style.display='none'; btn.disabled=true; btn.textContent='Checking…';
+  google.script.run.withSuccessHandler(function(p){ btn.disabled=false; btn.textContent='Delete'; showConfirm(p); })
+    .withFailureHandler(function(e){ btn.disabled=false; btn.textContent='Delete'; alert(e.message||e); })
+    .getDeletePreview(id);
+}
+function para(text,cls){ var p=document.createElement('p'); if(cls) p.className=cls; p.textContent=text; return p; }
+function showConfirm(p){
+  var c=$('cf'); c.innerHTML='';
+  c.appendChild(para('Delete ' + p.receiptId + ' (' + p.tenant + ', ' + inr(p.amount) + ', ' + p.date + ')? It is removed from RENT LOG; a copy is kept in the DELETED RECEIPTS sheet.'));
+  c.appendChild(para(p.willReuse
+    ? 'The next new entry will get receipt number ' + p.receiptId + ' again.'
+    : 'Newer receipts exist, so ' + p.receiptId + ' will stay unused. The next new entry will be ' + p.nextReceipt + '.'));
+  if(p.laterForTenant>0) c.appendChild(para('Warning: ' + p.laterForTenant + ' later receipt(s) exist for this tenant. Their printed balances were calculated with this payment and will no longer match the updated ledger. Deleting the newest receipt first is safest.','w'));
+  var yes=document.createElement('button'); yes.className='dd'; yes.textContent='Yes, delete ' + p.receiptId;
+  var no=document.createElement('button'); no.className='l'; no.textContent='Cancel'; no.onclick=closeConfirm;
+  yes.onclick=function(){
+    yes.disabled=true; no.disabled=true; yes.textContent='Deleting…';
+    google.script.run.withSuccessHandler(function(r){
+      closeConfirm();
+      if(!r.ok){ alert(r.message||'Not deleted.'); return; }
+      var n=$('note'); n.textContent=r.receiptId + ' deleted. Next new entry: ' + r.nextReceipt + '.' + (r.warning ? ' ' + r.warning : ''); n.style.display='block';
+      go();
+    }).withFailureHandler(function(e){ closeConfirm(); alert(e.message||e); }).deleteReceipt(p.receiptId);
+  };
+  var row=document.createElement('div'); row.appendChild(yes); row.appendChild(no); c.appendChild(row);
+  c.style.display='block';
+}
+
+$('go').onclick=go; $('q').addEventListener('keydown',function(e){if(e.key==='Enter')go();});
+google.script.run.withSuccessHandler(function(v){ isAdmin=!!v; go(); }).withFailureHandler(function(){ go(); }).canDeleteReceipts();
+</script>
+</body>
+</html>
